@@ -138,6 +138,14 @@ export default function App() {
   const armed = Boolean(status.target) && !status.ringing
   const target = status.target ? new Date(status.target) : null
 
+  // Two-stage dismissal: jumping jacks first, THEN the gesture.
+  // The server reports phase: 'jacks' | 'gesture'. If it doesn't send
+  // jacks_required (older server), fall back to gesture-only.
+  const jacksRequired = status.jacks_required ?? 0
+  const jacksDone = Math.min(status.jacks ?? 0, jacksRequired)
+  const phase = status.phase ?? (jacksRequired > 0 ? 'jacks' : 'gesture')
+  const jacksLeft = Math.max(0, jacksRequired - jacksDone)
+
   return (
     <main className="app">
       <section className="card">
@@ -222,15 +230,45 @@ export default function App() {
           ) : (
             <>
               <CameraView ring={status.target} />
-              <p className="overlay-hint">
-                Hold up <strong>{gestureLabel(status.required_gesture)}</strong> to turn it off
-              </p>
-              <div className="hold-bar">
-                <div className="hold-fill" style={{ width: `${Math.round(status.progress * 100)}%` }} />
-              </div>
-              <p className="overlay-seen">
-                Seeing: {status.gesture && status.gesture !== 'None' ? gestureLabel(status.gesture) : 'no gesture'}
-              </p>
+
+              {phase === 'jacks' ? (
+                <>
+                  <p className="overlay-hint">
+                    Do <strong>{jacksLeft}</strong> more jumping {jacksLeft === 1 ? 'jack' : 'jacks'} to unlock
+                    the gesture
+                  </p>
+                  <div
+                    className="hold-bar"
+                    role="progressbar"
+                    aria-valuemin={0}
+                    aria-valuemax={jacksRequired}
+                    aria-valuenow={jacksDone}
+                  >
+                    <div
+                      className="hold-fill"
+                      style={{ width: `${Math.round((jacksDone / jacksRequired) * 100)}%` }}
+                    />
+                  </div>
+                  <p className="overlay-seen">
+                    Jacks: {jacksDone} / {jacksRequired}
+                    {status.pose_found === false && ' · no body detected, step back'}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="overlay-hint">
+                    {jacksRequired > 0 && 'Jacks done! '}
+                    Now hold up <strong>{gestureLabel(status.required_gesture)}</strong> to turn it off
+                  </p>
+                  <div className="hold-bar">
+                    <div className="hold-fill" style={{ width: `${Math.round((status.progress ?? 0) * 100)}%` }} />
+                  </div>
+                  <p className="overlay-seen">
+                    Seeing:{' '}
+                    {status.gesture && status.gesture !== 'None' ? gestureLabel(status.gesture) : 'no gesture'}
+                  </p>
+                </>
+              )}
             </>
           )}
         </div>
