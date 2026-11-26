@@ -25,3 +25,4 @@ COOLDOWN_SECONDS = 1.0    # minimum time between two toggles
 # --- Alarm (server.py) ---
 ALARM_OFF_GESTURE = "Victory"  # gesture that silences a ringing alarm
 ALARM_HOLD_FRAMES = 20         # hold it a bit longer than the stopwatch toggle (~0.7s at 30fps)
+JACKS_REQUIRED = 3             # jumping jacks needed before the off gesture counts (server.py and main.py)
